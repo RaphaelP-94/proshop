@@ -1,7 +1,5 @@
-
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -11,18 +9,85 @@ datasource db {
 }
 
 model Product {
-  id  String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid  // Makes it a primary key
-  name String
-  slug String @unique(map: "product_slug_idx") // Map it to the index in order to make it unique
-  category String
-  images String[] // because array
-  brand String
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid // Makes it a primary key
+  name        String
+  slug        String   @unique(map: "product_slug_idx") // Map it to the index in order to make it unique
+  category    String
+  images      String[] // because array
+  brand       String
   description String
-  stock Int
-  price Decimal @default(0) @db.Decimal(12,2) // 12 digits in total, 2 after the decimal point
-  rating Decimal @default(0) @db.Decimal(3,2)
-  numReviews Int @default(0)
-  isFeatured Boolean @default(false)
-  banner String? // it's optional
-  createdAt DateTime @default(now()) @db.Timestamp(6) // Add the miliseconds at the end of the timestamp
+  stock       Int
+  price       Decimal  @default(0) @db.Decimal(12, 2) // 12 digits in total, 2 after the decimal point
+  rating      Decimal  @default(0) @db.Decimal(3, 2)
+  numReviews  Int      @default(0)
+  isFeatured  Boolean  @default(false)
+  banner      String? // it's optional
+  createdAt   DateTime @default(now()) @db.Timestamp(6) // Add the miliseconds at the end of the timestamp
+}
+
+model User {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String    @default("NO_NAME")
+  email         String    @unique(map: "user_email_idx") // Map it to the index in order to make it unique. What does that mean? It means that we can't have two users with the same email.
+  // Where does the idx stand for? It stands for index.
+  emailVerified DateTime? @db.Timestamp(6) // More precise timestamp
+  image         String?
+  password      String? // Questionmark because it's optional to use a password
+  role          String    @default("user")
+  address       Json?     @db.Json
+  paymentMethod String?
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime  @updatedAt
+  account       Account[]
+  Session       Session[]
+}
+
+model Account {
+  // Connect it to the User model / id. It's a one to one relationship. Map a foreign key to a primary key.
+  userId            String  @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt
+
+  // Connect it to the User model / id. It's a one to one relationship. Map a foreign key to a primary key.
+  // Add Account to the User model
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // a composite id => we are taking two fields "provider" and "providerAccountId", combining them and making them one primary key
+  // Example: provider: google, providerAccountId: 1234567890
+  // because we need to have a unique id for each account
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @id // Also unique but we don't need to map it to an index because it's already unique
+  userId       String   @db.Uuid
+  expires      DateTime @db.Timestamp(6)
+
+  // Again, to have the relation to the user table / model, we need to map the foreign key to the primary key
+  // Cascade means that if the user is deleted, the session is also deleted
+  // Add the Session model to the User model
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  // Composite id
+  @@id([identifier, token])
 }
