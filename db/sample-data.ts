@@ -1,4 +1,22 @@
+import { hashSync } from 'bcrypt-ts-edge';
+
 const sampleData = {
+  users: [
+    {
+      name: 'John Doe',
+      email: 'admin@example.com',
+      // Pass in: - password itself and - the number of salt rounds to use
+      // Salt => a random string that is added to the password before hashing in order to make it more secure
+      password: hashSync('123456', 10),
+      role: 'admin',
+    },
+    {
+      name: 'Jane Smith',
+      email: 'user@example.com',
+      password: hashSync('123456', 10),
+      role: 'user',
+    },
+  ],
   products: [
     {
       name: 'Polo Sporting Stretch Shirt',
