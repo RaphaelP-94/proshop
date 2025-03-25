@@ -7,9 +7,9 @@ import type { NextAuthConfig } from 'next-auth';
 
 export const config = {
   pages: {
-    signIn: '/auth/signin', // if not authenticated, redirect to signin. How does it check authenticated?
+    signIn: '/auth/sign-in', // if not authenticated, redirect to signin. How does it check authenticated?
     // It checks if the user is authenticated by checking if the session is valid. If the session is valid, the user is authenticated. If the session is invalid, the user is not authenticated.
-    error: '/auth/signin', // if error, redirect to signin
+    error: '/auth/sign-in', // if error, redirect to signin
   },
   session: {
     // define a strategy for the session
@@ -28,31 +28,45 @@ export const config = {
       },
       // Ultimately, credentials is the data that comes from the user via the form.
       async authorize(credentials) {
-        if (credentials === null) return null;
-        // Find user in database. Use user model to find user by email.
+        if (credentials === null) {
+          console.log('No credentials provided');
+          return null;
+        }
+
+        console.log('Looking for user with email:', credentials.email);
         const user = await prisma.user.findUnique({
           where: {
-            // Satisfy TypeScript
             email: credentials.email as string,
           },
         });
-        // Check if user exists and if the password matches.
-        if (user && user.password) {
-          // Takes in plain text password and compares it to the hashed password in the database.
-          const isMatch = bcryptCompareSync(
-            credentials.password as string,
-            user.password
-          );
-          // If password is correct, return the user.
-          if (isMatch) {
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              role: user.role,
-            };
-          }
+
+        if (!user) {
+          console.log('User not found');
+          return null;
         }
+
+        if (!user.password) {
+          console.log('User has no password');
+          return null;
+        }
+
+        console.log('Stored password hash:', user.password);
+        console.log('Provided password:', credentials.password);
+        const isMatch = bcryptCompareSync(
+          credentials.password as string,
+          user.password
+        );
+        console.log('Password match:', isMatch);
+
+        if (isMatch) {
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          };
+        }
+
         return null;
       },
     }),

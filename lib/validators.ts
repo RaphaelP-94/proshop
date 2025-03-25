@@ -33,3 +33,19 @@ export const signInFormSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
+
+// Schema for signing up users
+export const signUpFormSchema = z
+  .object({
+    name: z.string().min(3, 'Name must be at least 3 characters').max(50),
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z
+      .string()
+      .min(6, 'Confirm password must be at least 6 characters'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  }); // True or false to pass validation. Display massage inside confirmPassword field.
+// On the z-object we can add a "refine()" and pass data, which is everything inside
